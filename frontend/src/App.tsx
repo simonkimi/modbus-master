@@ -1,27 +1,32 @@
-import { createSignal } from 'solid-js';
-import logo from './assets/images/logo-universal.png';
-import './App.css';
-import { Greet } from "../wailsjs/go/main/App";
+import "./App.css";
+import { ServerController } from "@/components/ServerController";
+import { createGlobalStore, GlobalStoreContext } from "@/store/globalStore";
+import { ModbusItemController, ModbusTable } from "@/components/ModbusTable";
+import { Toaster } from "solid-toast";
 
 function App() {
-    const [resultText, setResultText] = createSignal("Please enter your name below 👇");
-    const [name, setName] = createSignal('');
-    const updateName = (e: any) => setName(e.target.value);
+  const store = createGlobalStore();
 
-    function greet() {
-        Greet(name()).then(result => setResultText(result));
-    }
-
-    return (
-        <div id="App">
-            <img src={logo} id="logo" alt="logo"/>
-            <div id="result" class="result">{resultText()}</div>
-            <div id="input" class="input-box">
-                <input id="name" class="input" onInput={updateName} autocomplete="off" name="input" type="text"/>
-                <button class="btn" onClick={greet}>Greet</button>
-            </div>
+  return (
+    <GlobalStoreContext.Provider value={store}>
+      <Toaster
+        toastOptions={{
+          style: {
+            background:
+              "color-mix(in oklab,var(--d-btn-color, var(--color-base-content)) 8%,var(--color-base-100))",
+            color: "var(--d-btn-color, var(--color-base-content))",
+          },
+        }}
+      />
+      <main class="flex flex-col p-4">
+        <ServerController />
+        <div class="pt-4">
+          <ModbusItemController />
+          <ModbusTable />
         </div>
-    )
+      </main>
+    </GlobalStoreContext.Provider>
+  );
 }
 
-export default App
+export default App;
