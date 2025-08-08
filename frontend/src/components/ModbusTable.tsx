@@ -1,42 +1,28 @@
-import {
-  ModBusDataValueType,
-  ModbusRegisterConfig,
-  ModBusValue,
-  ModBusValueType,
-} from "@/models/modbus_config";
-import { GlobalStoreContext } from "@/store/globalStore";
-import { Component, useContext, createSignal } from "solid-js";
-import { ModbusConfigIO } from "@/components/ModbusConfigIO";
-import { ModbusConfigDialog } from "@/components/ModbusConfigDialog";
+import { GlobalStoreContext } from '@/store/globalStore';
+import { Component, useContext, createSignal } from 'solid-js';
+import { ModbusConfigIO } from '@/components/ModbusConfigIO';
+import { ModbusConfigDialog } from '@/components/ModbusConfigDialog';
+import { models } from '@wails/go/models';
+import { ValueType } from '@/types/valueType';
 
 export const ModbusTable = () => {
   const store = useContext(GlobalStoreContext)!;
   const [isDialogOpen, setIsDialogOpen] = createSignal(false);
   const [editingConfig, setEditingConfig] = createSignal<
-    ModbusRegisterConfig | undefined
+    models.ModbusConfig | undefined
   >();
 
-  const handleEditConfig = (config: ModbusRegisterConfig) => {
+  const handleEditConfig = (config: models.ModbusConfig) => {
     setEditingConfig(config);
     setIsDialogOpen(true);
   };
 
-  const handleSaveConfig = (config: ModbusRegisterConfig) => {
-    if (editingConfig()) {
-      const index = store.modbusConfigs.findIndex((c) => c === editingConfig());
-      if (index !== -1) {
-        store.updateModbusConfig(index, config);
-      }
-    } else {
-      store.addModbusConfig(config);
-    }
+  const handleSaveConfig = (config: models.ModbusConfig) => {
+    store.setModbusConfig(config);
   };
 
-  const handleDeleteConfig = (config: ModbusRegisterConfig) => {
-    const index = store.modbusConfigs.findIndex((c) => c === config);
-    if (index !== -1) {
-      store.deleteModbusConfig(index);
-    }
+  const handleDeleteConfig = (config: models.ModbusConfig) => {
+    store.deleteModbusConfig(config.addr);
   };
 
   return (
@@ -53,9 +39,9 @@ export const ModbusTable = () => {
           </tr>
         </thead>
         <tbody>
-          {store.modbusConfigs.map((config) => (
+          {store.modbusConfigs.map(config => (
             <ModbusTableItem
-              {...config}
+              config={config}
               onEdit={() => handleEditConfig(config)}
             />
           ))}
@@ -73,20 +59,25 @@ export const ModbusTable = () => {
   );
 };
 
-interface ModbusTableItemProps extends ModbusRegisterConfig {
+interface ModbusTableItemProps {
+  config: models.ModbusConfig;
   onEdit: () => void;
 }
 
-const ModbusTableItem: Component<ModbusTableItemProps> = (props) => {
+const ModbusTableItem: Component<ModbusTableItemProps> = props => {
   return (
     <tr>
       <td>
-        <input class="d-checkbox" checked={props.enabled} type="checkbox" />
+        <input
+          class="d-checkbox"
+          checked={props.config.enabled}
+          type="checkbox"
+        />
       </td>
-      <td>{props.description}</td>
-      <td>{props.addr.toString(16).padStart(4, "0").toUpperCase()}</td>
-      <td>{modBusRawDisplay(props.value)}</td>
-      <td>{modBusValueDisplay(props)}</td>
+      <td>{props.config.description}</td>
+      <td>{props.config.addr.toString(16).padStart(4, '0').toUpperCase()}</td>
+      <td>{modBusRawDisplay(props.config)}</td>
+      <td>{modBusValueDisplay(props.config)}</td>
       <td class="space-x-1">
         <button class="d-btn d-btn-sm d-btn-soft" onClick={props.onEdit}>
           编辑
@@ -107,8 +98,8 @@ export const ModbusItemController = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSaveConfig = (config: ModbusRegisterConfig) => {
-    store.addModbusConfig(config);
+  const handleSaveConfig = (config: models.ModbusConfig) => {
+    store.setModbusConfig(config);
   };
 
   return (
@@ -127,33 +118,20 @@ export const ModbusItemController = () => {
   );
 };
 
-function modBusRawDisplay(value: ModBusValue): string {
-  switch (value.type) {
-    case ModBusValueType.Coil:
-      return value.value ? "true" : "false";
-    case ModBusValueType.InputStatus:
-      return value.value ? "true" : "false";
-    case ModBusValueType.HoldingRegister:
-      return value.value.toString(16).padStart(4, "0").toUpperCase();
-    case ModBusValueType.InputRegister:
-      return value.value.toString(16).padStart(4, "0").toUpperCase();
-  }
+function modBusRawDisplay(config: models.ModbusConfig): string {
+  return config.value.toString(16).padStart(4, '0').toUpperCase();
 }
 
-function modBusValueDisplay(config: ModbusRegisterConfig): string {
-  switch (config.value.type) {
-    case ModBusValueType.Coil:
-    case ModBusValueType.InputStatus:
-      return config.value.value ? "true" : "false";
-    case ModBusValueType.HoldingRegister:
-    case ModBusValueType.InputRegister:
-      if (config.dataValueType === ModBusDataValueType.Number) {
-        return (config.value.value * config.scale + config.offset).toString();
-      }
-      if (config.dataValueType === ModBusDataValueType.Binary) {
-        const binaryString = config.value.value.toString(2).padStart(16, "0");
-        return binaryString.replace(/(.{4})/g, "$1 ").trim();
-      }
-      return config.value.value.toString();
+function modBusValueDisplay(config: models.ModbusConfig): string {
+  switch (config.valueType) {
+    case ValueType.Bool:
+      return config.value ? 'true' : 'false';
+    case ValueType.Number:
+      return (config.value * config.scale + config.offset).toString();
+    case ValueType.Binary:
+      const binaryString = config.value.toString(2).padStart(16, '0');
+      return binaryString.replace(/(.{4})/g, '$1 ').trim();
+    default:
+      return modBusRawDisplay(config);
   }
 }
