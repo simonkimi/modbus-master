@@ -12,13 +12,13 @@ export const ModbusConfigIO: Component = () => {
         onClick={store.importModbusConfig}
         class="d-btn d-btn-outline d-btn-sm d-btn-primary"
       >
-        导入
+        导入协议
       </button>
       <button
         onClick={ExportConfig}
         class="d-btn d-btn-outline d-btn-sm d-btn-primary"
       >
-        导出
+        导出协议
       </button>
     </div>
   );

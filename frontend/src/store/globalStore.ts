@@ -25,7 +25,7 @@ interface GlobalStoreState {
 
 export function createGlobalStore() {
   const [state, setState] = createStore<GlobalStoreState>({
-    port: 8080,
+    port: 3066,
     isRunning: false,
     modbusConfigs: [],
     values: {},

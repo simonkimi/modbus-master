@@ -117,7 +117,7 @@ const ModbusTableItem: Component<ModbusTableItemProps> = props => {
     <tr>
       <td>
         <input
-          class="d-checkbox"
+          class="d-checkbox d-checkbox-sm pointer-events-none"
           checked={props.config.enabled}
           type="checkbox"
         />
@@ -127,15 +127,15 @@ const ModbusTableItem: Component<ModbusTableItemProps> = props => {
       <td>{modBusRawDisplay(value())}</td>
       <td>{modBusValueDisplay(props.config, value())}</td>
       <td class="space-x-1">
-        <button class="d-btn d-btn-sm d-btn-soft" onClick={props.onEdit}>
-          编辑
-        </button>
-        <button class="d-btn d-btn-sm d-btn-soft" onClick={props.onChangeValue}>
+        <button
+          class="d-btn d-btn-sm d-btn-outline d-btn-secondary"
+          onClick={props.onChangeValue}
+        >
           改值
         </button>
         <Show when={props.config.valueType === ValueType.Number}>
           <button
-            class="d-btn d-btn-sm d-btn-soft"
+            class="d-btn d-btn-sm d-btn-outline d-btn-success"
             onClick={handleIncreaseValue}
           >
             增加
@@ -143,12 +143,15 @@ const ModbusTableItem: Component<ModbusTableItemProps> = props => {
         </Show>
         <Show when={props.config.valueType === ValueType.Number}>
           <button
-            class="d-btn d-btn-sm d-btn-soft"
+            class="d-btn d-btn-sm d-btn-outline d-btn-error"
             onClick={handleDecreaseValue}
           >
             减少
           </button>
         </Show>
+        <button class="d-btn d-btn-sm d-btn-soft" onClick={props.onEdit}>
+          编辑
+        </button>
       </td>
     </tr>
   );

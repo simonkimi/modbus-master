@@ -44,7 +44,7 @@ export const ModbusValueDialog: Component<ModbusValueDialogProps> = props => {
         <h3 class="font-bold text-lg mb-4">改值</h3>
 
         <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center">
-          <label>通用 HEX</label>
+          <label>原始值</label>
           <input
             type="text"
             class="d-input input-bordered w-full"
@@ -52,6 +52,11 @@ export const ModbusValueDialog: Component<ModbusValueDialogProps> = props => {
             onInput={e => setHexInput(e.currentTarget.value)}
             placeholder="0000"
             maxLength={4}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                handleRawSubmit();
+              }
+            }}
           />
           <button class="d-btn d-btn-primary" onClick={handleRawSubmit}>
             下发
@@ -65,6 +70,11 @@ export const ModbusValueDialog: Component<ModbusValueDialogProps> = props => {
                 class="d-toggle"
                 checked={boolInput()}
                 onChange={e => setBoolInput(e.currentTarget.checked)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleBoolSubmit();
+                  }
+                }}
               />
               <button class="d-btn d-btn-primary" onClick={handleBoolSubmit}>
                 下发
@@ -81,6 +91,11 @@ export const ModbusValueDialog: Component<ModbusValueDialogProps> = props => {
                 value={numberInput()}
                 step="0.1"
                 onInput={e => setNumberInput(Number(e.currentTarget.value))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleNumberSubmit();
+                  }
+                }}
               />
               <button class="d-btn d-btn-primary" onClick={handleNumberSubmit}>
                 下发
@@ -99,6 +114,11 @@ export const ModbusValueDialog: Component<ModbusValueDialogProps> = props => {
                   setBinaryInput(e.currentTarget.value.replace(/[^01\s]/g, ''))
                 }
                 placeholder="例如: 10010"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleBinarySubmit();
+                  }
+                }}
               />
               <button class="d-btn d-btn-primary" onClick={handleBinarySubmit}>
                 下发
