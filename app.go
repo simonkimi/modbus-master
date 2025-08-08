@@ -46,6 +46,7 @@ func (a *App) StopModbusServer() {
 
 // 设置modbus配置
 func (a *App) SetModbusConfig(config *models.ModbusConfig) {
+	fmt.Printf("SetModbusConfig: %+v\n", config)
 	a.server.SetModbusConfig(config)
 }
 
@@ -132,4 +133,9 @@ func (a *App) ExportModbusConfig() error {
 // 获取所有modbus配置的值
 func (a *App) GetValue() map[uint16]uint16 {
 	return a.server.GetValue()
+}
+
+// 设置modbus配置的值
+func (a *App) SetValue(addr uint16, value uint16) {
+	a.server.SetValue(addr, value)
 }

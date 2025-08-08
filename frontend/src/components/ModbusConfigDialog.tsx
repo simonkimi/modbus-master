@@ -1,7 +1,7 @@
+import { ValueType } from '@/types/valueType';
 import { models } from '@wails/go/models';
 import { Component, createSignal, Show } from 'solid-js';
 import toast from 'solid-toast';
-import { ValueType } from '@/types/valueType';
 
 interface ModbusConfigDialogProps {
   isOpen: boolean;
@@ -23,8 +23,12 @@ export const ModbusConfigDialog: Component<ModbusConfigDialogProps> = props => {
   const [scale, setScale] = createSignal(props.config?.scale ?? 1);
   const [offset, setOffset] = createSignal(props.config?.offset ?? 0);
   const [delta, setDelta] = createSignal(props.config?.delta ?? 1);
-  const [dataValueType, setDataValueType] = createSignal<ValueType>(
-    (props.config?.valueType as ValueType) ?? ValueType.Number
+  const [dataValueType, setDataValueType] = createSignal<string>(
+    props.config?.valueType === undefined ||
+      props.config?.valueType === null ||
+      props.config?.valueType === ''
+      ? ValueType.Number
+      : props.config.valueType
   );
   const [addrHex, setAddrHex] = createSignal(
     props.config?.addr.toString(16).toUpperCase() ?? '0000'
@@ -78,7 +82,6 @@ export const ModbusConfigDialog: Component<ModbusConfigDialogProps> = props => {
       value: 0x0000,
       valueType: dataValueType(),
     };
-
     props.onSave(config);
 
     // 显示成功提示

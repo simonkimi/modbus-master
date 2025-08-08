@@ -4,6 +4,7 @@ import {
   ImportModbusConfig,
   RemoveModbusConfig,
   SetModbusConfig,
+  SetValue,
   StartModbusServer,
   StopModbusServer,
 } from '@wails/go/main/App';
@@ -32,8 +33,7 @@ export function createGlobalStore() {
 
   createEffect(() => {
     const intervalId = window.setInterval(async () => {
-      const values = await GetValue();
-      setState('values', values);
+      await getValues();
     }, 1000);
 
     onCleanup(() => {
@@ -42,6 +42,21 @@ export function createGlobalStore() {
       }
     });
   });
+
+  createEffect(async () => {
+    await updateModbusConfig();
+  });
+
+  async function setValue(addr: number, value: number) {
+    await SetValue(addr, value);
+    await getValues();
+  }
+
+  async function getValues() {
+    const values = await GetValue();
+    console.log('getValues', values);
+    setState('values', values);
+  }
 
   async function start() {
     try {
@@ -97,6 +112,9 @@ export function createGlobalStore() {
     get modbusConfigs() {
       return state.modbusConfigs;
     },
+    get values() {
+      return state.values;
+    },
     start,
     stop,
     setPort,
@@ -104,5 +122,6 @@ export function createGlobalStore() {
     setModbusConfig,
     deleteModbusConfig,
     importModbusConfig,
+    setValue,
   };
 }

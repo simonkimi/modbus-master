@@ -14,6 +14,8 @@ export function RemoveModbusConfig(arg1:number):Promise<void>;
 
 export function SetModbusConfig(arg1:models.ModbusConfig):Promise<void>;
 
+export function SetValue(arg1:number,arg2:number):Promise<void>;
+
 export function StartModbusServer(arg1:number):Promise<void>;
 
 export function StopModbusServer():Promise<void>;

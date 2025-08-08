@@ -10,7 +10,6 @@ export const ModbusConfigIO: Component = () => {
     <div class="flex flex-row space-x-2">
       <button
         onClick={store.importModbusConfig}
-        disabled={store.isRunning}
         class="d-btn d-btn-outline d-btn-sm d-btn-primary"
       >
         导入

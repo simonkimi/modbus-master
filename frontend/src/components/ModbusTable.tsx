@@ -1,14 +1,25 @@
-import { GlobalStoreContext } from '@/store/globalStore';
-import { Component, useContext, createSignal } from 'solid-js';
-import { ModbusConfigIO } from '@/components/ModbusConfigIO';
 import { ModbusConfigDialog } from '@/components/ModbusConfigDialog';
-import { models } from '@wails/go/models';
+import { ModbusConfigIO } from '@/components/ModbusConfigIO';
+import { ModbusValueDialog } from '@/components/ModbusValueDialog';
+import { GlobalStoreContext } from '@/store/globalStore';
 import { ValueType } from '@/types/valueType';
+import { models } from '@wails/go/models';
+import {
+  Component,
+  createMemo,
+  createSignal,
+  Show,
+  useContext,
+} from 'solid-js';
 
 export const ModbusTable = () => {
   const store = useContext(GlobalStoreContext)!;
   const [isDialogOpen, setIsDialogOpen] = createSignal(false);
   const [editingConfig, setEditingConfig] = createSignal<
+    models.ModbusConfig | undefined
+  >();
+  const [isValueDialogOpen, setIsValueDialogOpen] = createSignal(false);
+  const [valueEditingConfig, setValueEditingConfig] = createSignal<
     models.ModbusConfig | undefined
   >();
 
@@ -23,6 +34,17 @@ export const ModbusTable = () => {
 
   const handleDeleteConfig = (config: models.ModbusConfig) => {
     store.deleteModbusConfig(config.addr);
+  };
+
+  const handleOpenValueDialog = (config: models.ModbusConfig) => {
+    setValueEditingConfig(config);
+    setIsValueDialogOpen(true);
+  };
+
+  const handleSubmitValue = async (addr: number, raw: number) => {
+    console.log('handleSubmitValue', addr, raw);
+    await store.setValue(addr, raw);
+    setIsValueDialogOpen(false);
   };
 
   return (
@@ -43,18 +65,31 @@ export const ModbusTable = () => {
             <ModbusTableItem
               config={config}
               onEdit={() => handleEditConfig(config)}
+              onChangeValue={() => handleOpenValueDialog(config)}
             />
           ))}
         </tbody>
       </table>
 
-      <ModbusConfigDialog
-        isOpen={isDialogOpen()}
-        onClose={() => setIsDialogOpen(false)}
-        onSave={handleSaveConfig}
-        onDelete={editingConfig() ? handleDeleteConfig : undefined}
-        config={editingConfig()}
-      />
+      {isDialogOpen() && editingConfig() ? (
+        <ModbusConfigDialog
+          isOpen={isDialogOpen()}
+          onClose={() => setIsDialogOpen(false)}
+          onSave={handleSaveConfig}
+          onDelete={editingConfig() ? handleDeleteConfig : undefined}
+          config={editingConfig()}
+        />
+      ) : null}
+
+      {isValueDialogOpen() && valueEditingConfig() ? (
+        <ModbusValueDialog
+          isOpen={isValueDialogOpen()}
+          onClose={() => setIsValueDialogOpen(false)}
+          config={valueEditingConfig()!}
+          onSubmit={handleSubmitValue}
+          currentRaw={store.values[valueEditingConfig()!.addr]}
+        />
+      ) : null}
     </div>
   );
 };
@@ -62,9 +97,22 @@ export const ModbusTable = () => {
 interface ModbusTableItemProps {
   config: models.ModbusConfig;
   onEdit: () => void;
+  onChangeValue: () => void;
 }
 
 const ModbusTableItem: Component<ModbusTableItemProps> = props => {
+  const store = useContext(GlobalStoreContext)!;
+  const value = createMemo(() => store.values[props.config.addr]);
+
+  const handleIncreaseValue = () => {
+    const raw = Math.round(value() + props.config.delta / props.config.scale);
+    store.setValue(props.config.addr, raw);
+  };
+  const handleDecreaseValue = () => {
+    const raw = Math.round(value() - props.config.delta / props.config.scale);
+    store.setValue(props.config.addr, raw);
+  };
+
   return (
     <tr>
       <td>
@@ -76,15 +124,31 @@ const ModbusTableItem: Component<ModbusTableItemProps> = props => {
       </td>
       <td>{props.config.description}</td>
       <td>{props.config.addr.toString(16).padStart(4, '0').toUpperCase()}</td>
-      <td>{modBusRawDisplay(props.config)}</td>
-      <td>{modBusValueDisplay(props.config)}</td>
+      <td>{modBusRawDisplay(value())}</td>
+      <td>{modBusValueDisplay(props.config, value())}</td>
       <td class="space-x-1">
         <button class="d-btn d-btn-sm d-btn-soft" onClick={props.onEdit}>
           编辑
         </button>
-        <button class="d-btn d-btn-sm d-btn-soft">改值</button>
-        <button class="d-btn d-btn-sm d-btn-soft">增加</button>
-        <button class="d-btn d-btn-sm d-btn-soft">减少</button>
+        <button class="d-btn d-btn-sm d-btn-soft" onClick={props.onChangeValue}>
+          改值
+        </button>
+        <Show when={props.config.valueType === ValueType.Number}>
+          <button
+            class="d-btn d-btn-sm d-btn-soft"
+            onClick={handleIncreaseValue}
+          >
+            增加
+          </button>
+        </Show>
+        <Show when={props.config.valueType === ValueType.Number}>
+          <button
+            class="d-btn d-btn-sm d-btn-soft"
+            onClick={handleDecreaseValue}
+          >
+            减少
+          </button>
+        </Show>
       </td>
     </tr>
   );
@@ -118,20 +182,29 @@ export const ModbusItemController = () => {
   );
 };
 
-function modBusRawDisplay(config: models.ModbusConfig): string {
-  return config.value.toString(16).padStart(4, '0').toUpperCase();
+function modBusRawDisplay(value: number | undefined): string {
+  if (value === undefined) {
+    return '';
+  }
+  return value.toString(16).padStart(4, '0').toUpperCase();
 }
 
-function modBusValueDisplay(config: models.ModbusConfig): string {
+function modBusValueDisplay(
+  config: models.ModbusConfig,
+  value: number | undefined
+): string {
+  if (value === undefined) {
+    return '';
+  }
   switch (config.valueType) {
     case ValueType.Bool:
-      return config.value ? 'true' : 'false';
+      return value ? 'true' : 'false';
     case ValueType.Number:
-      return (config.value * config.scale + config.offset).toString();
+      return (value * config.scale + config.offset).toString();
     case ValueType.Binary:
-      const binaryString = config.value.toString(2).padStart(16, '0');
+      const binaryString = value.toString(2).padStart(16, '0');
       return binaryString.replace(/(.{4})/g, '$1 ').trim();
     default:
-      return modBusRawDisplay(config);
+      return modBusRawDisplay(value);
   }
 }

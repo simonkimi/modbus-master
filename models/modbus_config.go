@@ -20,5 +20,6 @@ func (m *ModbusConfig) Clone() *ModbusConfig {
 		Scale:       m.Scale,
 		Offset:      m.Offset,
 		Delta:       m.Delta,
+		ValueType:   m.ValueType,
 	}
 }

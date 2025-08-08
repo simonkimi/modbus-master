@@ -3,6 +3,7 @@ package mymodbus
 import (
 	"fmt"
 	"modbus-master/models"
+	"sort"
 	"sync"
 
 	"github.com/simonvetter/modbus"
@@ -81,6 +82,9 @@ func (m *ModbusServer) GetModbusConfig() []*models.ModbusConfig {
 	for _, config := range m.modbusConfigs {
 		res = append(res, config.Clone())
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Addr < res[j].Addr
+	})
 	return res
 }
 
@@ -106,3 +110,17 @@ func (m *ModbusServer) GetValue() map[uint16]uint16 {
 	}
 	return res
 }
+
+// 设置modbus配置的值
+func (m *ModbusServer) SetValue(addr uint16, value uint16) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	config, ok := m.modbusConfigs[addr]
+	if !ok {
+		return
+	}
+
+	config.Value = value
+}
+

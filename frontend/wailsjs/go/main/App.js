@@ -26,6 +26,10 @@ export function SetModbusConfig(arg1) {
   return window['go']['main']['App']['SetModbusConfig'](arg1);
 }
 
+export function SetValue(arg1, arg2) {
+  return window['go']['main']['App']['SetValue'](arg1, arg2);
+}
+
 export function StartModbusServer(arg1) {
   return window['go']['main']['App']['StartModbusServer'](arg1);
 }
