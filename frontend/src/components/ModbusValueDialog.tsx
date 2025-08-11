@@ -87,7 +87,7 @@ export const ModbusValueDialog: Component<ModbusValueDialogProps> = props => {
         <h3 class="font-bold text-lg mb-4">改值</h3>
 
         <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center">
-          <label>原始值</label>
+          <label>Hex</label>
           <input
             type="text"
             class="d-input input-bordered w-full"

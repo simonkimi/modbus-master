@@ -1,6 +1,6 @@
 import { ByteOrderEnum, DataTypeEnum } from '@/utils/data';
 import { models } from '@wails/go/models';
-import { Component, createSignal, Show } from 'solid-js';
+import { Component, Show, createSignal } from 'solid-js';
 import toast from 'solid-toast';
 import { ulid } from 'ulid';
 
@@ -21,7 +21,7 @@ export const ModbusConfigDialog: Component<ModbusConfigDialogProps> = props => {
     props.config?.description ?? ''
   );
   const [startAddr, setStartAddr] = createSignal(props.config?.startAddr ?? 0);
-  const [addrSize, setAddrSize] = createSignal(props.config?.addrSize ?? 0);
+  const [addrSize, setAddrSize] = createSignal(props.config?.addrSize ?? 1);
   const [scale, setScale] = createSignal(props.config?.scale ?? 1);
   const [offset, setOffset] = createSignal(props.config?.offset ?? 0);
   const [delta, setDelta] = createSignal(props.config?.delta ?? 1);
