@@ -1,7 +1,8 @@
-import { ValueType } from '@/types/valueType';
+import { ByteOrderEnum, DataTypeEnum } from '@/utils/data';
 import { models } from '@wails/go/models';
 import { Component, createSignal, Show } from 'solid-js';
 import toast from 'solid-toast';
+import { ulid } from 'ulid';
 
 interface ModbusConfigDialogProps {
   isOpen: boolean;
@@ -19,19 +20,19 @@ export const ModbusConfigDialog: Component<ModbusConfigDialogProps> = props => {
   const [description, setDescription] = createSignal(
     props.config?.description ?? ''
   );
-  const [addr, setAddr] = createSignal(props.config?.addr ?? 0);
+  const [startAddr, setStartAddr] = createSignal(props.config?.startAddr ?? 0);
+  const [addrSize, setAddrSize] = createSignal(props.config?.addrSize ?? 0);
   const [scale, setScale] = createSignal(props.config?.scale ?? 1);
   const [offset, setOffset] = createSignal(props.config?.offset ?? 0);
   const [delta, setDelta] = createSignal(props.config?.delta ?? 1);
   const [dataValueType, setDataValueType] = createSignal<string>(
-    props.config?.valueType === undefined ||
-      props.config?.valueType === null ||
-      props.config?.valueType === ''
-      ? ValueType.Number
-      : props.config.valueType
+    !!props.config?.valueType ? props.config.valueType : DataTypeEnum.Uint16
+  );
+  const [byteOrder, setByteOrder] = createSignal<string>(
+    !!props.config?.byteOrder ? props.config.byteOrder : ByteOrderEnum.BigEndian
   );
   const [addrHex, setAddrHex] = createSignal(
-    props.config?.addr.toString(16).toUpperCase() ?? '0000'
+    props.config?.startAddr.toString(16).toUpperCase() ?? '0000'
   );
 
   // 地址验证函数
@@ -45,7 +46,7 @@ export const ModbusConfigDialog: Component<ModbusConfigDialogProps> = props => {
       toast.error('地址范围应为 0000-FFFF');
       return false;
     }
-    setAddr(value);
+    setStartAddr(value);
     return true;
   };
 
@@ -72,15 +73,23 @@ export const ModbusConfigDialog: Component<ModbusConfigDialogProps> = props => {
       return;
     }
 
+    if (addrSize() <= 0) {
+      toast.error('地址大小必须大于0');
+      return;
+    }
+
     const config: models.ModbusConfig = {
+      id: !!props.config?.id ? props.config?.id : ulid(),
       enabled: enabled(),
       description: description().trim(),
-      addr: addr(),
+      startAddr: startAddr(),
+      addrSize: addrSize(),
       scale: scale(),
       offset: offset(),
       delta: delta(),
-      value: 0x0000,
       valueType: dataValueType(),
+      byteOrder: ByteOrderEnum.BigEndian,
+      initValue: [],
     };
     props.onSave(config);
 
@@ -135,15 +144,40 @@ export const ModbusConfigDialog: Component<ModbusConfigDialogProps> = props => {
             maxLength={4}
           />
 
+          <label>地址大小</label>
+          <input
+            type="number"
+            class="d-input input-bordered w-full"
+            value={addrSize()}
+            onChange={e => setAddrSize(parseInt(e.currentTarget.value) || 0)}
+          />
+
           <label>数据值类型</label>
           <select
             class="d-select w-full"
             value={dataValueType()}
-            onChange={e => setDataValueType(e.currentTarget.value as ValueType)}
+            onChange={e =>
+              setDataValueType(e.currentTarget.value as DataTypeEnum)
+            }
           >
-            <option value={ValueType.Bool}>布尔值</option>
-            <option value={ValueType.Number}>数值</option>
-            <option value={ValueType.Binary}>二进制</option>
+            <option value={DataTypeEnum.Bool}>布尔值</option>
+            <option value={DataTypeEnum.Binary}>二进制</option>
+            <option value={DataTypeEnum.Uint16}>Uint16</option>
+            <option value={DataTypeEnum.Uint32}>Uint32</option>
+            <option value={DataTypeEnum.Int16}>Int16</option>
+            <option value={DataTypeEnum.Int32}>Int32</option>
+            <option value={DataTypeEnum.Float32}>Float32</option>
+            <option value={DataTypeEnum.Float64}>Float64</option>
+          </select>
+
+          <label>字节序</label>
+          <select
+            class="d-select w-full"
+            value={byteOrder()}
+            onChange={e => setByteOrder(e.currentTarget.value as ByteOrderEnum)}
+          >
+            <option value={ByteOrderEnum.BigEndian}>大端</option>
+            <option value={ByteOrderEnum.LittleEndian}>小端</option>
           </select>
 
           <label>比例</label>

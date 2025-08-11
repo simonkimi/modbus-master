@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"modbus-master/models"
@@ -51,8 +52,8 @@ func (a *App) SetModbusConfig(config *models.ModbusConfig) {
 }
 
 // 删除modbus配置
-func (a *App) RemoveModbusConfig(addr uint16) {
-	a.server.RemoveModbusConfig(addr)
+func (a *App) RemoveModbusConfig(ulid string) {
+	a.server.RemoveModbusConfig(ulid)
 }
 
 // 获取modbus配置
@@ -91,7 +92,7 @@ func (a *App) ImportModbusConfig() error {
 		return fmt.Errorf("解析JSON失败: %w", err)
 	}
 
-	a.server.ImportModbusConfig(configs)
+	a.server.InitModbusConfig(configs)
 
 	return nil
 }
@@ -131,11 +132,20 @@ func (a *App) ExportModbusConfig() error {
 }
 
 // 获取所有modbus配置的值
-func (a *App) GetValue() map[uint16]uint16 {
-	return a.server.GetValue()
+func (a *App) GetValue() map[string]string {
+	values := a.server.GetAllValue()
+	result := make(map[string]string)
+	for k, v := range values {
+		result[k] = base64.StdEncoding.EncodeToString(v)
+	}
+	return result
 }
 
 // 设置modbus配置的值
-func (a *App) SetValue(addr uint16, value uint16) {
-	a.server.SetValue(addr, value)
+func (a *App) SetValue(guid string, value string) {
+	decoded, err := base64.StdEncoding.DecodeString(value)
+	if err != nil {
+		return
+	}
+	a.server.SetValue(guid, decoded)
 }

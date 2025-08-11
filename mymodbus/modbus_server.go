@@ -11,13 +11,15 @@ import (
 
 type ModbusServer struct {
 	server        *modbus.ModbusServer
-	modbusConfigs map[uint16]*models.ModbusConfig
+	modbusConfigs map[string]*models.ModbusConfig
+	register      map[uint16]uint16
 	lock          sync.RWMutex
 }
 
 func NewModbusServer() *ModbusServer {
 	return &ModbusServer{
-		modbusConfigs: make(map[uint16]*models.ModbusConfig),
+		modbusConfigs: make(map[string]*models.ModbusConfig),
+		register:      make(map[uint16]uint16),
 		lock:          sync.RWMutex{},
 		server:        nil,
 	}
@@ -33,7 +35,7 @@ func (m *ModbusServer) Start(port uint16) error {
 	}
 
 	var err error
-	handler := NewModbusRequestHandler(m.modbusConfigs, &m.lock)
+	handler := NewModbusRequestHandler(m.register, &m.lock)
 	m.server, err = modbus.NewServer(&modbus.ServerConfiguration{
 		URL:        fmt.Sprintf("tcp://0.0.0.0:%d", port),
 		MaxClients: 10,
@@ -57,20 +59,58 @@ func (m *ModbusServer) Stop() {
 	m.server = nil
 }
 
-// 添加modbus配置
+// 初始化modbus配置
+func (m *ModbusServer) InitModbusConfig(configs []*models.ModbusConfig) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.register = make(map[uint16]uint16)
+
+	for _, config := range configs {
+		m.setModbusConfig(config)
+	}
+}
+
+func (m *ModbusServer) setModbusConfig(config *models.ModbusConfig) {
+	// 初始化寄存器
+	for i := 0; i < int(config.AddrSize); i++ {
+		addr := config.StartAddr + uint16(i)
+		_, ok := m.register[addr]
+		if !ok {
+			if len(config.InitValue) > i {
+				m.register[addr] = uint16(config.InitValue[i])<<8 | uint16(config.InitValue[i+1])
+			} else {
+				m.register[addr] = 0
+			}
+		}
+	}
+
+	m.modbusConfigs[config.Id] = config
+}
+
+// 编辑modbus配置
 func (m *ModbusServer) SetModbusConfig(config *models.ModbusConfig) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.modbusConfigs[config.Addr] = config
+	m.setModbusConfig(config)
 }
 
 // 删除modbus配置
-func (m *ModbusServer) RemoveModbusConfig(addr uint16) {
+func (m *ModbusServer) RemoveModbusConfig(id string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	delete(m.modbusConfigs, addr)
+	config, ok := m.modbusConfigs[id]
+	if !ok {
+		return
+	}
+
+	for i := 0; i < int(config.AddrSize); i++ {
+		addr := config.StartAddr + uint16(i)
+		delete(m.register, addr)
+	}
+	delete(m.modbusConfigs, id)
 }
 
 // 获取所有modbus配置
@@ -83,44 +123,48 @@ func (m *ModbusServer) GetModbusConfig() []*models.ModbusConfig {
 		res = append(res, config.Clone())
 	}
 	sort.Slice(res, func(i, j int) bool {
-		return res[i].Addr < res[j].Addr
+		return res[i].StartAddr < res[j].StartAddr
 	})
 	return res
 }
 
-// 导入modbus配置
-func (m *ModbusServer) ImportModbusConfig(config []*models.ModbusConfig) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	m.modbusConfigs = make(map[uint16]*models.ModbusConfig)
-	for _, config := range config {
-		m.modbusConfigs[config.Addr] = config
-	}
-}
-
-// 获取所有modbus配置的值
-func (m *ModbusServer) GetValue() map[uint16]uint16 {
+// 获取所有的值
+func (m *ModbusServer) GetAllValue() map[string][]byte {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	res := make(map[uint16]uint16)
-	for addr, config := range m.modbusConfigs {
-		res[addr] = config.Value
+	res := make(map[string][]byte)
+	for guid, config := range m.modbusConfigs {
+		sourceArr := make([]byte, config.AddrSize*2)
+		for i := 0; i < int(config.AddrSize); i++ {
+			addr := config.StartAddr + uint16(i)
+			sourceArr[i*2] = byte(m.register[addr] >> 8)
+			sourceArr[i*2+1] = byte(m.register[addr])
+		}
+		res[guid] = sourceArr
 	}
 	return res
 }
 
-// 设置modbus配置的值
-func (m *ModbusServer) SetValue(addr uint16, value uint16) {
+// 设置值
+func (m *ModbusServer) SetValue(guid string, data []byte) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	config, ok := m.modbusConfigs[addr]
+	config, ok := m.modbusConfigs[guid]
 	if !ok {
 		return
 	}
 
-	config.Value = value
+	for i := 0; i < int(config.AddrSize); i++ {
+		addr := config.StartAddr + uint16(i)
+		value := 0
+		if len(data) > i*2 {
+			value = int(data[i*2]) << 8
+		}
+		if len(data) > i*2+1 {
+			value |= int(data[i*2+1])
+		}
+		m.register[addr] = uint16(value)
+	}
 }
-

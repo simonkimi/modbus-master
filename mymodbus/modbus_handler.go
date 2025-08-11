@@ -1,21 +1,21 @@
 package mymodbus
 
 import (
-	"modbus-master/models"
+	"fmt"
 	"sync"
 
 	"github.com/simonvetter/modbus"
 )
 
 type ModbusRequestHandler struct {
-	modbusConfigs map[uint16]*models.ModbusConfig
-	lock          *sync.RWMutex
+	register map[uint16]uint16
+	lock     *sync.RWMutex
 }
 
-func NewModbusRequestHandler(modbusConfigs map[uint16]*models.ModbusConfig, lock *sync.RWMutex) *ModbusRequestHandler {
+func NewModbusRequestHandler(register map[uint16]uint16, lock *sync.RWMutex) *ModbusRequestHandler {
 	return &ModbusRequestHandler{
-		modbusConfigs: modbusConfigs,
-		lock:          lock,
+		register: register,
+		lock:     lock,
 	}
 }
 
@@ -31,21 +31,22 @@ func (m *ModbusRequestHandler) HandleCoils(req *modbus.CoilsRequest) (res []bool
 
 	for i := 0; i < int(req.Quantity); i++ {
 		addr := req.Addr + uint16(i)
-		config := m.modbusConfigs[addr]
+		_, ok := m.register[addr]
 
-		if config == nil {
+		if !ok {
+			fmt.Printf("Coils addr 0x%X not found\n", addr)
 			return nil, modbus.ErrIllegalDataAddress
 		}
 
 		if req.IsWrite {
 			if req.Args[i] {
-				config.Value = 0xFF00
+				m.register[addr] = 0xFF00
 			} else {
-				config.Value = 0x0000
+				m.register[addr] = 0x0000
 			}
 		}
 
-		res = append(res, config.Value != 0)
+		res = append(res, m.register[addr] != 0)
 	}
 	return
 }
@@ -57,13 +58,14 @@ func (m *ModbusRequestHandler) HandleDiscreteInputs(req *modbus.DiscreteInputsRe
 
 	for i := 0; i < int(req.Quantity); i++ {
 		addr := req.Addr + uint16(i)
-		config := m.modbusConfigs[addr]
+		_, ok := m.register[addr]
 
-		if config == nil {
+		if !ok {
+			fmt.Printf("DiscreteInputs addr 0x%X not found\n", addr)
 			return nil, modbus.ErrIllegalDataAddress
 		}
 
-		res = append(res, config.Value != 0)
+		res = append(res, m.register[addr] != 0)
 	}
 	return
 }
@@ -80,17 +82,18 @@ func (m *ModbusRequestHandler) HandleHoldingRegisters(req *modbus.HoldingRegiste
 
 	for i := 0; i < int(req.Quantity); i++ {
 		addr := req.Addr + uint16(i)
-		config := m.modbusConfigs[addr]
+		_, ok := m.register[addr]
 
-		if config == nil {
+		if !ok {
+			fmt.Printf("HoldingRegisters addr 0x%X not found\n", addr)
 			return nil, modbus.ErrIllegalDataAddress
 		}
 
 		if req.IsWrite {
-			config.Value = req.Args[i]
+			m.register[addr] = req.Args[i]
 		}
 
-		res = append(res, config.Value)
+		res = append(res, m.register[addr])
 	}
 	return
 }
@@ -102,12 +105,14 @@ func (m *ModbusRequestHandler) HandleInputRegisters(req *modbus.InputRegistersRe
 
 	for i := 0; i < int(req.Quantity); i++ {
 		addr := req.Addr + uint16(i)
-		config := m.modbusConfigs[addr]
-		if config == nil {
+		_, ok := m.register[addr]
+
+		if !ok {
+			fmt.Printf("InputRegisters addr 0x%X not found\n", addr)
 			return nil, modbus.ErrIllegalDataAddress
 		}
 
-		res = append(res, config.Value)
+		res = append(res, m.register[addr])
 	}
 	return
 }

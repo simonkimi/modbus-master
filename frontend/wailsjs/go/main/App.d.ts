@@ -6,15 +6,15 @@ export function ExportModbusConfig():Promise<void>;
 
 export function GetModbusConfig():Promise<Array<models.ModbusConfig>>;
 
-export function GetValue():Promise<Record<number, number>>;
+export function GetValue():Promise<Record<string, string>>;
 
 export function ImportModbusConfig():Promise<void>;
 
-export function RemoveModbusConfig(arg1:number):Promise<void>;
+export function RemoveModbusConfig(arg1:string):Promise<void>;
 
 export function SetModbusConfig(arg1:models.ModbusConfig):Promise<void>;
 
-export function SetValue(arg1:number,arg2:number):Promise<void>;
+export function SetValue(arg1:string,arg2:string):Promise<void>;
 
 export function StartModbusServer(arg1:number):Promise<void>;
 

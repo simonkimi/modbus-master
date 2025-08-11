@@ -1,14 +1,17 @@
 export namespace models {
 	
 	export class ModbusConfig {
+	    id: string;
 	    enabled: boolean;
 	    description: string;
-	    addr: number;
-	    value: number;
+	    startAddr: number;
+	    addrSize: number;
+	    initValue: number[];
+	    valueType: string;
+	    byteOrder: string;
 	    scale: number;
 	    offset: number;
 	    delta: number;
-	    valueType: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModbusConfig(source);
@@ -16,14 +19,17 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.enabled = source["enabled"];
 	        this.description = source["description"];
-	        this.addr = source["addr"];
-	        this.value = source["value"];
+	        this.startAddr = source["startAddr"];
+	        this.addrSize = source["addrSize"];
+	        this.initValue = source["initValue"];
+	        this.valueType = source["valueType"];
+	        this.byteOrder = source["byteOrder"];
 	        this.scale = source["scale"];
 	        this.offset = source["offset"];
 	        this.delta = source["delta"];
-	        this.valueType = source["valueType"];
 	    }
 	}
 

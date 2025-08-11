@@ -23,6 +23,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.11
         version: 4.1.11
+      ulid:
+        specifier: ^3.0.1
+        version: 3.0.1
     devDependencies:
       '@types/node':
         specifier: ^24.2.0
@@ -817,6 +820,10 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  ulid@3.0.1:
+    resolution: {integrity: sha512-dPJyqPzx8preQhqq24bBG1YNkvigm87K8kVEHCD+ruZg24t6IFEFv00xMWfxcC4djmFtiTLdFuADn4+DOz6R7Q==}
+    hasBin: true
+
   undici-types@7.10.0:
     resolution: {integrity: sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag==}
 
@@ -1533,6 +1540,8 @@ snapshots:
       picomatch: 4.0.3
 
   typescript@5.9.2: {}
+
+  ulid@3.0.1: {}
 
   undici-types@7.10.0: {}
 

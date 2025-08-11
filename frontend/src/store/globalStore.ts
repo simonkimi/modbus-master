@@ -20,7 +20,7 @@ interface GlobalStoreState {
   port: number;
   isRunning: boolean;
   modbusConfigs: models.ModbusConfig[];
-  values: Record<number, number>;
+  values: Record<string, Uint8Array>;
 }
 
 export function createGlobalStore() {
@@ -47,15 +47,23 @@ export function createGlobalStore() {
     await updateModbusConfig();
   });
 
-  async function setValue(addr: number, value: number) {
-    await SetValue(addr, value);
+  async function setValue(id: string, data: Uint8Array) {
+    const base64 = btoa(String.fromCharCode(...data));
+    await SetValue(id, base64);
     await getValues();
   }
 
   async function getValues() {
     const values = await GetValue();
-    console.log('getValues', values);
-    setState('values', values);
+    setState(
+      'values',
+      Object.fromEntries(
+        Object.entries(values).map(([k, v]) => [
+          k,
+          Uint8Array.from(atob(v), c => c.charCodeAt(0)),
+        ])
+      )
+    );
   }
 
   async function start() {
@@ -81,6 +89,7 @@ export function createGlobalStore() {
   async function updateModbusConfig() {
     const configs = await GetModbusConfig();
     setState('modbusConfigs', configs);
+    console.log('updateModbusConfig', configs);
   }
 
   function setPort(port: number) {
@@ -92,8 +101,8 @@ export function createGlobalStore() {
     await updateModbusConfig();
   }
 
-  async function deleteModbusConfig(addr: number) {
-    await RemoveModbusConfig(addr);
+  async function deleteModbusConfig(id: string) {
+    await RemoveModbusConfig(id);
     await updateModbusConfig();
   }
 
