@@ -17,7 +17,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "modbus-master",
+		Title:  "modbus开发助手",
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{
