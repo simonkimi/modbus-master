@@ -116,9 +116,7 @@ const ModbusTableItem: Component<ModbusTableItemProps> = props => {
       props.config.valueType as DataTypeEnum
     );
 
-    const raw = Math.round(
-      valueNumber + props.config.delta / props.config.scale
-    );
+    const raw = valueNumber + props.config.delta / props.config.scale;
     store.setValue(
       props.config.id,
       getBytes(
@@ -134,9 +132,7 @@ const ModbusTableItem: Component<ModbusTableItemProps> = props => {
       props.config.byteOrder as ByteOrderEnum,
       props.config.valueType as DataTypeEnum
     );
-    const raw = Math.round(
-      valueNumber - props.config.delta / props.config.scale
-    );
+    const raw = valueNumber - props.config.delta / props.config.scale;
     store.setValue(
       props.config.id,
       getBytes(
